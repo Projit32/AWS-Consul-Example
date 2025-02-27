@@ -1,0 +1,415 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Application Load Balancer to handle multiple application requests
+
+Parameters:
+  ALBNamePrefix:
+    Type: String
+    Description: Name for ALB Stack
+
+  VPCID:
+    Type: String
+    Description: VPC ID in which ALB will be connected to
+    Default: ""
+
+  PublicSubnets:
+    Type: String
+    Description: Comma separated subnet IDs
+
+  VPCEndpointSG:
+    Type: String
+    Description: VPC Endpoint SG
+    Default: ""
+
+  RequestTimeOut:
+    Type: Number
+    Description: Timeout of the ALB requests
+    Default: 60
+
+  ALBType:
+    Type: String
+    Description: Type of ALB
+    Default: internet-facing
+    AllowedValues:
+      - internet-facing
+      - internal
+
+  SSLCertificateARN:
+    Type: String
+    Description: ARN of SSL certificate
+    Default: ""
+
+  DomainName:
+    Type: String
+    Description: Name of the Domain
+
+  HostedZoneId:
+    Type: String
+    Description: Hosted Zone ID
+
+  InstanceType:
+    Type: String
+    Default: t4g.nano
+    Description: EC2 instance type
+
+  AMIId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64
+    Description: AMI ID for the EC2 instances
+  
+  BucketName:
+    Type: String
+    Description: Name of the bucket
+
+  PrivateSubnets:
+    Type: String
+    Description: A list of private subnet IDs
+
+  ServerDesiredCount:
+    Type: Number
+    Description: The desired number of Consul API clients
+    Default: 0
+
+  ServerMinCount:
+    Type: Number
+    Description: The minimum number of Consul API clients
+    Default: 0
+
+  ServerMaxCount:
+    Type: Number
+    Description: The maximum number of Consul API clients
+    Default: 5
+
+Conditions:
+  IsVPCProvided:  !Not [!Equals ["", !Ref VPCID]]
+  IsPublic: !Equals ["internet-facing", !Ref ALBType]
+  HasVPCEndpointSG: !Not [!Equals ["", !Ref VPCEndpointSG]]
+
+Resources:
+
+# LB SG
+  ALBWebSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow users to connect to the ALB
+      GroupName: !Sub ${ALBNamePrefix}-ALB-SG
+      VpcId: !If
+        - IsVPCProvided
+        - !Ref VPCID
+        - !Ref AWS::NoValue
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - !If
+          - IsPublic
+          - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIp: 0.0.0.0/0
+          - !Ref AWS::NoValue
+
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+# LB
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: !Sub ${ALBNamePrefix}-ALB
+      Scheme: !Ref ALBType
+      SecurityGroups:
+        - !Ref ALBWebSG
+        - !If
+          - HasVPCEndpointSG
+          - !Ref VPCEndpointSG
+          - !Ref AWS::NoValue
+      Subnets: !Split [ ",", !Ref PublicSubnets]
+      Type: application
+      LoadBalancerAttributes:
+        - Key: routing.http.preserve_host_header.enabled
+          Value: true
+        - Key: routing.http.xff_client_port.enabled
+          Value: true
+        - Key: routing.http.xff_header_processing.mode
+          Value: append
+        - Key: idle_timeout.timeout_seconds
+          Value: !Ref RequestTimeOut
+
+# Listeners
+  Port443Listener:
+    Condition: IsPublic
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: "HTTPS"
+      Certificates:
+        - CertificateArn: !Ref SSLCertificateARN
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ConsulTargetGroup
+
+  Port80Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+      DefaultActions:
+        - !If
+          - IsPublic
+          - Type: redirect
+            RedirectConfig:
+              Host: '#{host}'
+              Path: '/#{path}'
+              Port: '443'
+              Query: '#{query}'
+              Protocol: HTTPS
+              StatusCode: HTTP_301
+          - Type: fixed-response
+            FixedResponseConfig:
+              ContentType: application/json
+              MessageBody: "{\"HTTPCode\": 503, \"Message\":\"Service Unavailable\"}"
+              StatusCode: 503
+
+# DNS
+
+  DNSRouteRecord:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: IsPublic
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Comment: Zone apex alias targeted to ALB LoadBalancer.
+      RecordSets:
+        - Name: !Ref DomainName
+          Type: A
+          AliasTarget:
+            HostedZoneId: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+            EvaluateTargetHealth: True
+            DNSName: !GetAtt ApplicationLoadBalancer.DNSName
+
+# Key Pair
+  EC2KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub 'consul-key-pair-${AWS::Region}'
+
+# EC2 ROLE
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EC2DescribeInstances
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                Resource: '*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+# EC2 SG
+  ConsulServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Firewall for the consul server
+      VpcId: !Ref VPCID
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: 0
+          ToPort: 0
+          CidrIp: 0.0.0.0/0
+          Description: Allow any outbound traffic
+
+  # Consul Server Ingress Rules
+  ConsulServerAllow8500FromLoadBalancer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8500
+      ToPort: 8500
+      SourceSecurityGroupId: !Ref ALBWebSG
+      Description: Allow HTTP traffic from Load Balancer
+
+  ConsulServerAllow8301TcpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8301
+      ToPort: 8301
+      SourceSecurityGroupId: !Ref ConsulServerSecurityGroup
+      Description: Allow LAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8301UdpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 8301
+      ToPort: 8301
+      SourceSecurityGroupId: !Ref ConsulServerSecurityGroup
+      Description: Allow LAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8300FromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8300
+      ToPort: 8300
+      SourceSecurityGroupId: !Ref ConsulServerSecurityGroup
+      Description: Allow RPC traffic from Consul Server to Server
+
+  ConsulServerAllow8302UdpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 8302
+      ToPort: 8302
+      SourceSecurityGroupId: !Ref ConsulServerSecurityGroup
+      Description: Allow WAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8302TcpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8302
+      ToPort: 8302
+      SourceSecurityGroupId: !Ref ConsulServerSecurityGroup
+      Description: Allow WAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow22FromBastion:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+#      SourceSecurityGroupId: !Ref BastionSecurityGroup
+      Description: Allow SSH traffic from consul bastion
+
+
+# Launch Template
+  ConsulServerLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: consul-server-template
+      VersionDescription: Initial version
+      LaunchTemplateData:
+        KeyName: !Ref EC2KeyPair
+        ImageId: !Ref AMIId
+        InstanceType: !Ref InstanceType
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            mkdir server
+            aws s3 cp s3://${BucketName}/server/ ./server --recursive
+            cd ./server
+            sudo bash server.sh
+        SecurityGroupIds:
+          - !GetAtt ConsulServerSecurityGroup.GroupId
+          - !If
+            - HasVPCEndpointSG
+            - !Ref VPCEndpointSG
+            - !Ref AWS::NoValue
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpPutResponseHopLimit: 2
+          HttpTokens: required
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            SpotInstanceType: one-time
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: consul-cluster
+                Value: !Sub consul-${AWS::Region}
+              - Key: Name
+                Value: consul-server
+#
+# ASG
+  ConsulClientWebASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub 'consul-server-asg'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ConsulServerLaunchTemplate
+        Version: !GetAtt ConsulServerLaunchTemplate.LatestVersionNumber
+      DesiredCapacity: !Ref ServerDesiredCount
+      MinSize: !Ref ServerMinCount
+      MaxSize: !Ref ServerMaxCount
+      VPCZoneIdentifier: !Split [ ",", !Ref PrivateSubnets]
+      TargetGroupARNs:
+        - !Ref ConsulTargetGroup
+      HealthCheckGracePeriod: 300
+      HealthCheckType: EC2
+      TerminationPolicies:
+        - OldestLaunchTemplate
+      MetricsCollection:
+        - Granularity: 1Minute
+          Metrics:
+            - GroupDesiredCapacity
+            - GroupInServiceCapacity
+            - GroupPendingCapacity
+            - GroupMinSize
+            - GroupMaxSize
+            - GroupInServiceInstances
+            - GroupPendingInstances
+            - GroupStandbyInstances
+            - GroupStandbyCapacity
+            - GroupTerminatingCapacity
+            - GroupTerminatingInstances
+            - GroupTotalCapacity
+            - GroupTotalInstances
+
+# Target Group
+  ConsulTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: Consul-Server-TG
+      VpcId: !Ref VPCID
+      Port: 8500
+      Protocol: HTTP
+      TargetType: instance
+      HealthCheckPath: /
+      HealthCheckPort: '8500'
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-399'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'

@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "consul-server-stack"
+resolve_s3 = true
+s3_prefix = "consul-server-stack"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "BucketName=\"consul-bucket-us-east-1-704678691702\" ALBNamePrefix=\"consul-public\" ALBType=\"internet-facing\" VPCID=\"vpc-06f0a453ead09f8ef\" PrivateSubnets=\"subnet-09c0f0b6f6fd95a92,subnet-0aac28382039cfd30,subnet-06ab56ec8a942a189,subnet-0e123d5731196e35f,subnet-06668478308eb9710,subnet-01ab88af2eff41ffb\" PublicSubnets=\"subnet-0f84ac100a3ddd43b,subnet-07b211f7267a84a74,subnet-02e23b33e06c07b61,subnet-0781211305c18a763,subnet-0b578f6f20e6e47b9,subnet-0139570920d260207\" RequestTimeOut=\"60\" SSLCertificateARN=\"arn:aws:acm:us-east-1:704678691702:certificate/88a35a85-72ce-4b6c-818a-cbdc2ce767b2\" DomainName=\"consul.proapplication.net\" HostedZoneId=\"Z0716017FNQSL38BA6TG\""
+

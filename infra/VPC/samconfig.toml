@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "Consul-VPC"
+resolve_s3 = true
+s3_prefix = "Consul-VPC"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "VPCName=\"Consul\" VPCRegion=\"us-east-1\" Subnet2Required=\"true\" Subnet3Required=\"true\" Subnet4Required=\"true\" Subnet5Required=\"true\" Subnet6Required=\"true\" NatGatewayRequired=\"false\""
+
