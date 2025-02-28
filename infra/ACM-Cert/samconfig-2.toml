@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "consul-cert"
+resolve_s3 = true
+s3_prefix = "consul-cert"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "DomainName=\"us-east-2.consul.proapplication.net\" HostedZoneId=\"Z0716017FNQSL38BA6TG\""
+

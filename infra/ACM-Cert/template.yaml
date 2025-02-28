@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: TLS Cert for application
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Name of the Domain
+
+  HostedZoneId:
+    Type: String
+    Description: Hosted Zone ID
+
+Resources:
+  TLSCertificate:
+    Type: "AWS::CertificateManager::Certificate"
+    Properties:
+      DomainName: !Ref DomainName
+      CertificateTransparencyLoggingPreference: ENABLED
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      KeyAlgorithm: RSA_2048
+      ValidationMethod: DNS
+
+Outputs:
+  CertificateARN:
+    Description: Certificate ARN
+    Value: !Ref TLSCertificate
