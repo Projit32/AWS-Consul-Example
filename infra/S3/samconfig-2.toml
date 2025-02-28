@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "consul-bucket"
+resolve_s3 = true
+s3_prefix = "consul-bucket"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "BucketName=\"consul-bucket\""
+
