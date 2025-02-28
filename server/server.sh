@@ -28,12 +28,12 @@ source server.env
 LOCAL_IP=$(ip -o route get to 169.254.169.254 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
 echo "Fetchec local ip : ${LOCAL_IP}"
 
-consul tls cert create -server -dc="${REGION}" -domain=consul -additional-ipaddress="${LOCAL_IP}" -additional-ipaddress=127.0.0.1 -additional-dnsname="localhost"
+consul tls cert create -server -dc="${DATACENTER}" -domain=consul -additional-ipaddress="${LOCAL_IP}" -additional-ipaddress=127.0.0.1 -additional-dnsname="localhost"
 
 mkdir -p /etc/consul.d/cert
 mv consul-agent-ca.pem /etc/consul.d/cert
-mv "${REGION}-server-consul-0.pem" /etc/consul.d/cert
-mv "${REGION}-server-consul-0-key.pem" /etc/consul.d/cert
+mv "${DATACENTER}-server-consul-0.pem" /etc/consul.d/cert
+mv "${DATACENTER}-server-consul-0-key.pem" /etc/consul.d/cert
 
 
 
@@ -52,8 +52,8 @@ ui_config {
 # TLS Configuration
 tls {
   defaults {
-    key_file               = "/etc/consul.d/cert/${REGION}-server-consul-0-key.pem"
-    cert_file              = "/etc/consul.d/cert/${REGION}-server-consul-0.pem"
+    key_file               = "/etc/consul.d/cert/${DATACENTER}-server-consul-0-key.pem"
+    cert_file              = "/etc/consul.d/cert/${DATACENTER}-server-consul-0.pem"
     ca_file                = "/etc/consul.d/cert/consul-agent-ca.pem"
     verify_incoming        = true
     verify_outgoing        = true
@@ -130,4 +130,4 @@ WantedBy=multi-user.target
 
 EOF
 #
-#systemctl start consul
+systemctl start consul
