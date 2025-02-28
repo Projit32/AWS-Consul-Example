@@ -20,19 +20,24 @@ sudo mkdir --parents /opt/consul
 sudo chown --recursive consul:consul /opt/consul
 
 
-LOCAL_IP=`ip -o route get to 169.254.169.254 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
+tr -d $'\r' < server.env > server.env.tmp
+cat server.env.tmp > server.env
+source server.env
+
+
+LOCAL_IP=$(ip -o route get to 169.254.169.254 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
 echo "Fetchec local ip : ${LOCAL_IP}"
 
-consul tls cert create -server -dc us-east-1 -domain consul -additional-ipaddress=${LOCAL_IP} -additional-ipaddress=127.0.0.1 -additional-dnsname="proconsul.internal" -additional-dnsname="localhost"
+consul tls cert create -server -dc="${REGION}" -domain=consul -additional-ipaddress="${LOCAL_IP}" -additional-ipaddress=127.0.0.1 -additional-dnsname="localhost"
 
 mkdir -p /etc/consul.d/cert
 mv consul-agent-ca.pem /etc/consul.d/cert
-mv us-east-1-server-consul-0.pem /etc/consul.d/cert
-mv us-east-1-server-consul-0-key.pem /etc/consul.d/cert
+mv "${REGION}-server-consul-0.pem" /etc/consul.d/cert
+mv "${REGION}-server-consul-0-key.pem" /etc/consul.d/cert
 
-source server.env
 
-cat > consul.hcl <<- EOF
+
+cat > /etc/consul.d/consul.hcl <<- EOF
 log_level  = "INFO"
 server     = true
 datacenter = "${DATACENTER}"
@@ -47,8 +52,8 @@ ui_config {
 # TLS Configuration
 tls {
   defaults {
-    key_file               = "/etc/consul.d/cert/us-east-1-server-consul-0-key.pem"
-    cert_file              = "/etc/consul.d/cert/us-east-1-server-consul-0.pem"
+    key_file               = "/etc/consul.d/cert/${REGION}-server-consul-0-key.pem"
+    cert_file              = "/etc/consul.d/cert/${REGION}-server-consul-0.pem"
     ca_file                = "/etc/consul.d/cert/consul-agent-ca.pem"
     verify_incoming        = true
     verify_outgoing        = true
@@ -97,8 +102,6 @@ connect = {
 }
 EOF
 
-tr -d $'\r' < consul.hcl > /etc/consul.d/consul.hcl
-
 sudo chown --recursive consul:consul /etc/consul.d
 sudo chmod 640 /etc/consul.d/consul.hcl
 
@@ -126,5 +129,5 @@ LimitNOFILE=65536
 WantedBy=multi-user.target
 
 EOF
-
-systemctl start consul
+#
+#systemctl start consul
