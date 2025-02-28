@@ -372,7 +372,7 @@ Resources:
       TargetGroupARNs:
         - !Ref ConsulTargetGroup
       HealthCheckGracePeriod: 300
-      HealthCheckType: EC2
+      HealthCheckType: ELB
       TerminationPolicies:
         - OldestLaunchTemplate
       MetricsCollection:
