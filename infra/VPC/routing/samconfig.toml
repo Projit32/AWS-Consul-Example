@@ -6,5 +6,5 @@ s3_prefix = "Consul-VPC-Routing"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
-parameter_overrides = "VpcPeerConnectionId=\"pcx-00e97e6944e8570db\" PeerVpcCidr=\"10.2.0.0/16\" LocalRouteTableId=\"rtb-0d274fb6bc3a3a750\""
+parameter_overrides = "VpcPeerConnectionId=\"pcx-00e97e6944e8570db\" PeerVpcCidr=\"10.2.0.0/16\" PrivateRouteTableId=\"rtb-0d274fb6bc3a3a750\" PublicRouteTableId=\"rtb-0fefa5c0651ec7dd0\""
 

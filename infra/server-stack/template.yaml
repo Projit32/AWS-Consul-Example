@@ -68,7 +68,7 @@ Parameters:
   ServerDesiredCount:
     Type: Number
     Description: The desired number of Consul API clients
-    Default: 3
+    Default: 0
 
   ServerMinCount:
     Type: Number

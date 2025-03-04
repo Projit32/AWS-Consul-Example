@@ -10,14 +10,25 @@ Parameters:
     Type: String
     Description: VPC Peer CIDR
 
-  LocalRouteTableId:
+  PrivateRouteTableId:
+    Type: String
+    Description: Local VPC Route Table ID
+
+  PublicRouteTableId:
     Type: String
     Description: Local VPC Route Table ID
 
 Resources:
-  PeerVpcRoute:
+  PeerVpcRoutePrivate:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: !Ref PeerVpcCidr
-      RouteTableId: !Ref LocalRouteTableId
+      RouteTableId: !Ref PrivateRouteTableId
+      VpcPeeringConnectionId: !Ref VpcPeerConnectionId
+
+  PeerVpcRoutePublic:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: !Ref PeerVpcCidr
+      RouteTableId: !Ref PublicRouteTableId
       VpcPeeringConnectionId: !Ref VpcPeerConnectionId

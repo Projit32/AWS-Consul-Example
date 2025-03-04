@@ -35,12 +35,13 @@ mv consul-agent-ca.pem /etc/consul.d/cert
 mv "${DATACENTER}-server-consul-0.pem" /etc/consul.d/cert
 mv "${DATACENTER}-server-consul-0-key.pem" /etc/consul.d/cert
 
-
+if [ "$DATACENTER" == "$PRIMARY_DATACENTER" ]; then
 
 cat > /etc/consul.d/consul.hcl <<- EOF
 log_level  = "INFO"
 server     = true
 datacenter = "${DATACENTER}"
+primary_datacenter = "${PRIMARY_DATACENTER}"
 
 # # Authoritative datacenter for Federation
 # primary_datacenter = "dc1"
@@ -75,11 +76,12 @@ advertise_addr = "${LOCAL_IP}"
 ports {
   http  = 8500
   https = 8501
+  serf_wan  = 8302
 }
 
 # Cluster Join - Using Cloud Auto Join
 bootstrap_expect = ${BOOTSTRAP_SERVER}
-retry_join       = ["provider=aws tag_key=${TAG_NAME} tag_value=${TAG_VALUE} region=${REGION}"]
+retry_join       = ["provider=aws tag_key=${TAG_NAME} tag_value=${TAG_VALUE}-${DATACENTER} region=${DATACENTER}"]
 
 # Enable and Configure Consul ACLs
 # acl = {
@@ -101,6 +103,77 @@ connect = {
   enabled = true
 }
 EOF
+else
+
+cat > /etc/consul.d/consul.hcl <<- EOF
+log_level  = "INFO"
+server     = true
+datacenter = "${DATACENTER}"
+primary_datacenter = "${PRIMARY_DATACENTER}"
+
+# # Authoritative datacenter for Federation
+# primary_datacenter = "dc1"
+
+ui_config {
+  enabled = true
+}
+
+# TLS Configuration
+tls {
+  defaults {
+    key_file               = "/etc/consul.d/cert/${DATACENTER}-server-consul-0-key.pem"
+    cert_file              = "/etc/consul.d/cert/${DATACENTER}-server-consul-0.pem"
+    ca_file                = "/etc/consul.d/cert/consul-agent-ca.pem"
+    verify_incoming        = true
+    verify_outgoing        = true
+    verify_server_hostname = true
+  }
+}
+
+# Gossip Encryption - generate key using consul keygen
+encrypt = "${GOSSIP_ENCRYPTION}"
+
+leave_on_terminate = true
+data_dir           = "/opt/consul"
+
+# Agent Network Configuration
+client_addr    = "0.0.0.0"
+bind_addr      = "${LOCAL_IP}"
+advertise_addr = "${LOCAL_IP}"
+
+ports {
+  http  = 8500
+  https = 8501
+  serf_wan  = 8302
+}
+
+# Cluster Join - Using Cloud Auto Join
+bootstrap_expect = ${BOOTSTRAP_SERVER}
+retry_join       = ["provider=aws tag_key=${TAG_NAME} tag_value=${TAG_VALUE}-${DATACENTER} region=${DATACENTER}"]
+retry_join_wan   = ["provider=aws tag_key=${TAG_NAME} tag_value=${TAG_VALUE}-${PRIMARY_DATACENTER} region=${PRIMARY_DATACENTER}"]
+
+# Enable and Configure Consul ACLs
+# acl = {
+#   enabled        = true
+#   default_policy = "deny"
+#   down_policy    = "extend-cache"
+#   tokens = {
+#     agent = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+#   }
+# }
+
+# Set raft multiplier to lowest value (best performance) - 1 is recommended for Production servers
+performance = {
+    raft_multiplier = 1
+}
+
+# Enable service mesh capability for Consul datacenter
+connect = {
+  enabled = true
+}
+EOF
+
+fi
 
 sudo chown --recursive consul:consul /etc/consul.d
 sudo chmod 640 /etc/consul.d/consul.hcl
