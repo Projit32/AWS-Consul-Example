@@ -68,7 +68,7 @@ Parameters:
   ServerDesiredCount:
     Type: Number
     Description: The desired number of Consul API clients
-    Default: 0
+    Default: 3
 
   ServerMinCount:
     Type: Number
@@ -198,7 +198,7 @@ Resources:
   EC2KeyPair:
     Type: AWS::EC2::KeyPair
     Properties:
-      KeyName: !Sub 'consul-key-pair-${AWS::Region}'
+      KeyName: !Sub 'consul-server-key-pair-${AWS::Region}'
 
 # EC2 ROLE
   EC2Role:
@@ -358,7 +358,7 @@ Resources:
                 Value: consul-server
 #
 # ASG
-  ConsulClientWebASG:
+  ConsulServerWebASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: !Sub 'consul-server-asg'

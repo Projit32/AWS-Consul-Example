@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "Consul-VPC-Peering"
+resolve_s3 = true
+s3_prefix = "Consul-VPC-Peering"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "PeerVPCId=\"vpc-08b9de2cdfbc47241\" VpcId=\"vpc-06f0a453ead09f8ef\" PeerRegion=\"us-east-2\""
+

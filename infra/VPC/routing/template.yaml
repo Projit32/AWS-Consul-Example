@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC Peer Routing
+
+Parameters:
+  VpcPeerConnectionId:
+    Type: String
+    Description: VPC Peer Connection ID
+
+  PeerVpcCidr:
+    Type: String
+    Description: VPC Peer CIDR
+
+  LocalRouteTableId:
+    Type: String
+    Description: Local VPC Route Table ID
+
+Resources:
+  PeerVpcRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: !Ref PeerVpcCidr
+      RouteTableId: !Ref LocalRouteTableId
+      VpcPeeringConnectionId: !Ref VpcPeerConnectionId

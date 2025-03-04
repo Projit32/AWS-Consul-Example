@@ -87,6 +87,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}a
       CidrBlock: 10.2.1.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-A
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -96,6 +99,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}b
       CidrBlock: 10.2.2.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-B
 
   PublicSubnet3:
     Type: AWS::EC2::Subnet
@@ -105,6 +111,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}c
       CidrBlock: 10.2.3.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-C
 
   PublicSubnet4:
     Type: AWS::EC2::Subnet
@@ -114,6 +123,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}d
       CidrBlock: 10.2.4.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-D
 
   PublicSubnet5:
     Type: AWS::EC2::Subnet
@@ -123,6 +135,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}e
       CidrBlock: 10.2.5.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-E
 
   PublicSubnet6:
     Type: AWS::EC2::Subnet
@@ -132,6 +147,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}f
       CidrBlock: 10.2.6.0/24
       MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Public-Subnet-F
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
@@ -140,6 +158,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}a
       CidrBlock: 10.2.7.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-A
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -149,6 +170,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}b
       CidrBlock: 10.2.8.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-B
 
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
@@ -158,6 +182,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}c
       CidrBlock: 10.2.9.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-C
 
   PrivateSubnet4:
     Type: AWS::EC2::Subnet
@@ -167,6 +194,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}d
       CidrBlock: 10.2.10.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-D
 
   PrivateSubnet5:
     Type: AWS::EC2::Subnet
@@ -176,6 +206,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}e
       CidrBlock: 10.2.11.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-E
 
   PrivateSubnet6:
     Type: AWS::EC2::Subnet
@@ -185,6 +218,9 @@ Resources:
       AvailabilityZone: !Sub ${VPCRegion}f
       CidrBlock: 10.2.12.0/24
       MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${VPCName}-Private-Subnet-F
 
  ## INTERNET GATEWAY
   InternetGateway:

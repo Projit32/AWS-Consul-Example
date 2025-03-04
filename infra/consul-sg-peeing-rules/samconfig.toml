@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "consul-sg-peering-use1-use2"
+resolve_s3 = true
+s3_prefix = "consul-sg-peering"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "ConsulHostServerSecurityGroup=\"sg-0c239dc3ce97c2001\" ConsulPeerServerCIDR=\"10.2.0.0/16\""
+

@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "Consul-VPC-Routing"
+resolve_s3 = true
+s3_prefix = "Consul-VPC-Routing"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "VpcPeerConnectionId=\"pcx-00e97e6944e8570db\" PeerVpcCidr=\"10.1.0.0/16\" LocalRouteTableId=\"rtb-0ad38bfb3ffcb6677\""
+

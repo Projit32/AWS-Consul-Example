@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Application Load Balancer to handle multiple application requests
+
+Parameters:
+  ConsulHostServerSecurityGroup:
+    Type: String
+    Description: Security group of host consul
+
+  ConsulPeerServerCIDR:
+    Type: String
+    Description: Security group of host consul
+
+Resources:
+  ConsulServerAllow8500FromLoadBalancer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8500
+      ToPort: 8500
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow HTTP traffic from Load Balancer
+
+  ConsulServerAllow8301TcpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8301
+      ToPort: 8301
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow LAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8301UdpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 8301
+      ToPort: 8301
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow LAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8300FromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8300
+      ToPort: 8300
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow RPC traffic from Consul Server to Server
+
+  ConsulServerAllow8302UdpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: udp
+      FromPort: 8302
+      ToPort: 8302
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow WAN gossip traffic from Consul Server to Server
+
+  ConsulServerAllow8302TcpFromServer:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ConsulHostServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8302
+      ToPort: 8302
+      CidrIp: !Ref ConsulPeerServerCIDR
+      Description: Allow WAN gossip traffic from Consul Server to Server

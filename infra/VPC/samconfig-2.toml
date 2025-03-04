@@ -6,5 +6,5 @@ s3_prefix = "Consul-VPC"
 region = "us-east-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
-parameter_overrides = "VPCName=\"Consul\" VPCRegion=\"us-east-2\" Subnet2Required=\"true\" Subnet3Required=\"true\" Subnet4Required=\"false\" Subnet5Required=\"false\" Subnet6Required=\"false\" NatGatewayRequired=\"false\""
+parameter_overrides = "VPCName=\"Consul\" VPCRegion=\"us-east-2\" Subnet2Required=\"true\" Subnet3Required=\"true\" Subnet4Required=\"false\" Subnet5Required=\"false\" Subnet6Required=\"false\" NatGatewayRequired=\"true\""
 
