@@ -6,5 +6,5 @@ s3_prefix = "consul-sg-peering"
 region = "us-east-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
-parameter_overrides = "ConsulHostServerSecurityGroup=\"sg-0ed39369de15bdbc0\" ConsulPeerServerCIDR=\"10.1.0.0/16\""
+parameter_overrides = "ConsulHostServerSecurityGroup=\"sg-0d2c220cf74c40d8f\" ConsulPeerServerCIDR=\"10.1.0.0/16\""
 
